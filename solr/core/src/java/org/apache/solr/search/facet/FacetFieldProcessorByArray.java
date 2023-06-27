@@ -21,6 +21,7 @@ import static org.apache.solr.search.facet.FacetContext.SKIP_FACET;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
@@ -44,7 +45,7 @@ abstract class FacetFieldProcessorByArray extends FacetFieldProcessor {
   int startTermIndex;
   int endTermIndex;
   int nTerms;
-  int nDocs;
+  final int nDocs = 0;
   int maxSlots;
 
   int allBucketsSlot = -1; // slot for the primary Accs (countAcc, collectAcc)
@@ -112,7 +113,30 @@ abstract class FacetFieldProcessorByArray extends FacetFieldProcessor {
       prefixRef.copyChars(prefix);
     }
 
+    FacetDebugInfo debug = fcontext.getDebugInfo();
+    long start = System.nanoTime();
     findStartAndEndOrds();
+
+    long end = System.nanoTime();
+    if (debug != null) {
+      debug.putInfoItem("findStartAndEndOrds", TimeUnit.NANOSECONDS.toMillis(end - start));
+    }
+
+    // Allow terminating early on fields with super large domain.
+    {
+      int domainSize = fcontext.base.size();
+      if (domainSize >= freq.maxFacetableDomainSize) {
+        // too many documents for faceting on a multi-value field.
+        if (debug != null) {
+          debug.putInfoItem("maxFacetableDomainSize", freq.maxFacetableDomainSize);
+        }
+
+        refineResult = new SimpleOrderedMap<>();
+        refineResult.add("maxFacetableDomainSizeExceeded", freq.maxFacetableDomainSize);
+
+        return refineResult;
+      }
+    }
 
     if (refineResult != null) {
       if (freq.allBuckets) {
