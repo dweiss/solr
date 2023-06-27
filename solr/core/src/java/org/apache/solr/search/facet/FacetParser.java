@@ -563,6 +563,18 @@ abstract class FacetParser<T extends FacetRequest> {
         facet.method = FacetField.FacetMethod.fromString(getString(m, "method", null));
         facet.cacheDf = (int) getLong(m, "cacheDf", facet.cacheDf);
 
+        facet.maxFacetableDomainSize =
+            getLong(
+                m,
+                "maxFacetableDomainSize",
+                Long.parseLong(
+                    getSolrRequest()
+                        .getParams()
+                        .getFieldParam(
+                            facet.field,
+                            "maxFacetableDomainSize",
+                            Long.toString(facet.maxFacetableDomainSize))));
+
         // TODO: pull up to higher level?
         facet.refine = FacetRequest.RefineMethod.fromObj(m.get("refine"));
 
