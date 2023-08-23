@@ -57,15 +57,17 @@ public class FacetFieldPreloader extends AbstractSolrEventListener {
                         == null) {
                       result = "no doc values";
                     }
-                    log.warn(
-                        "  Sorted set doc values warmed up for field '"
-                            + fieldName
-                            + "': "
-                            + result
-                            + ", dv="
-                            + schemaField.hasDocValues()
-                            + ", dvAsStored="
-                            + schemaField.useDocValuesAsStored());
+                    if (log.isWarnEnabled()) {
+                      log.warn(
+                          "  Sorted set doc values warmed up for field '"
+                              + fieldName
+                              + "': "
+                              + result
+                              + ", dv="
+                              + schemaField.hasDocValues()
+                              + ", dvAsStored="
+                              + schemaField.useDocValuesAsStored());
+                    }
                   } catch (IOException ex) {
                     log.error("  Could not preload sorted set doc values for: " + fieldName);
                   }
